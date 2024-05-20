@@ -6,3 +6,5 @@ black
 radon
 openai
 tenacity
+django-cors-headers
+djangorestframework
