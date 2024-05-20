@@ -1,15 +1,38 @@
 import ast
 import sys
 import os
-from openai import OpenAI
+import openai
 from radon.complexity import cc_visit
 from tenacity import retry, wait_random_exponential, stop_after_attempt
 
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+def get_openai_client():
+    return openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+
+def analyze_code(code):
+    _ = ast.parse(code)  # Assigned to underscore to indicate it's not used
+    complexity = cc_visit(code)
+    complexity_info = []
+    for item in complexity:
+        complexity_info.append({
+            'name': item.name,
+            'lineno': item.lineno,
+            'col_offset': item.col_offset,
+            'end_lineno': item.endline,
+            'end_col_offset': item.end_col_offset if hasattr(item, 'end_col_offset') else None,
+            'complexity': item.complexity,
+            'classname': getattr(item, 'classname', None)
+        })
+    return {
+        'complexity': complexity_info,
+        'functions': [func.name for func in complexity]
+    }
 
 
 @retry(wait=wait_random_exponential(min=1, max=60), stop=stop_after_attempt(6))
 def generate_code_review_comments(code):
+    client = get_openai_client()
     response = client.chat.completions.create(
         model="gpt-3.5-turbo",
         messages=[
@@ -19,32 +42,6 @@ def generate_code_review_comments(code):
         max_tokens=150
     )
     return response.choices[0].message.content.strip()
-
-
-def analyze_code(code):
-    # Parse the code into an AST
-    _ = ast.parse(code)  # Assigned to underscore to indicate it's not used
-
-    # Analyze the complexity using radon
-    complexity = cc_visit(code)
-
-    # Extract relevant information from the complexity results
-    complexity_info = []
-    for item in complexity:
-        complexity_info.append({
-            'name': item.name,
-            'lineno': item.lineno,
-            'col_offset': item.col_offset,
-            'end_lineno': item.endline,  # Corrected attribute name
-            'end_col_offset': item.end_col_offset if hasattr(item, 'end_col_offset') else None,  # Attribute check
-            'complexity': item.complexity,
-            'classname': getattr(item, 'classname', None)  # Use getattr to safely access classname
-        })
-
-    return {
-        'complexity': complexity_info,
-        'functions': [func.name for func in complexity]
-    }
 
 
 def format_analysis_result(result):
