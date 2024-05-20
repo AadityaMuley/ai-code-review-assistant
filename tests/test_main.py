@@ -1,6 +1,7 @@
 import unittest
 from textwrap import dedent
-from src.main import analyze_code
+from unittest.mock import patch, MagicMock
+from src.main import analyze_code, generate_code_review_comments
 
 
 class TestCodeAnalysis(unittest.TestCase):
@@ -33,6 +34,23 @@ class TestCodeAnalysis(unittest.TestCase):
         }
         result = analyze_code(code)
         self.assertEqual(result, expected_result)
+
+    @patch('src.main.get_openai_client')
+    def test_generate_code_review_comments(self, mock_get_openai_client):
+        mock_client = MagicMock()
+        mock_get_openai_client.return_value = mock_client
+        mock_client.chat.completions.create.return_value.choices[0].message.content.strip.return_value = (
+            "Review: The code looks good."
+        )
+
+        code = dedent("""
+        def addition():
+            a = 1
+            b = 2
+            return a + b
+        """)
+        result = generate_code_review_comments(code)
+        self.assertEqual(result, "Review: The code looks good.")
 
 
 if __name__ == "__main__":
