@@ -1,4 +1,6 @@
-clearflake8
+flake8
 pytest
 black
 radon
+openai
+tenacity
