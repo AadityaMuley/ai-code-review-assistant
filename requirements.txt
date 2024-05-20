@@ -1,4 +1,4 @@
-clearflake8
+flake8
 pytest
 black
 radon
