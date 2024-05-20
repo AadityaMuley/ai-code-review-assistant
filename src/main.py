@@ -45,6 +45,23 @@ def generate_code_review_comments(code):
     )
     return response.choices[0].message.content.strip()
 
+def format_analysis_result(result):
+    formatted_result = "Analysis Result:\n"
+    for item in result['complexity']:
+        formatted_result += (
+            f"Function/Class: {item['name']}\n"
+            f"  Line Number: {item['lineno']}\n"
+            f"  Column Offset: {item['col_offset']}\n"
+            f"  End Line Number: {item['end_lineno']}\n"
+            f"  End Column Offset: {item['end_col_offset']}\n"
+            f"  Complexity: {item['complexity']}\n"
+            f"  Class Name: {item['classname']}\n\n"
+        )
+    formatted_result += "Functions:\n"
+    for func in result['functions']:
+        formatted_result += f"  - {func}\n"
+    return formatted_result
+
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("Usage: python main.py <path_to_python_file>")
@@ -56,5 +73,8 @@ if __name__ == "__main__":
 
     analysis_result = analyze_code(code)
     review_comments = generate_code_review_comments(code)
-    print("Analysis Result:", analysis_result)
+
+    formatted_analysis_result = format_analysis_result(analysis_result)
+
+    print(formatted_analysis_result)
     print("\nCode Review Comments:\n", review_comments)
