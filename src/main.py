@@ -1,7 +1,11 @@
 import ast
 import sys
+import os
+import openai
 from radon.complexity import cc_visit
 from radon.visitors import ComplexityVisitor
+
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
 def analyze_code(code):
     # Parse the code into an AST
@@ -28,6 +32,17 @@ def analyze_code(code):
         'functions': [func.name for func in complexity]
     }
 
+def generate_code_review_comments(code):
+    response = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        messages=[
+            {"role": "system", "content": "You are a code review assistant."},
+            {"role": "user", "content": f"Review the following Python code and provide comments:\n\n{code}"}
+        ],
+        max_tokens=150,
+    )
+    return response['choices'][0]['message']['content'].strip()
+
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("Usage: python main.py <path_to_python_file>")
@@ -38,4 +53,6 @@ if __name__ == "__main__":
         code = file.read()
 
     analysis_result = analyze_code(code)
+    review_comments = generate_code_review_comments(code)
     print(analysis_result)
+    print("\nCode Review Comments:\n", review_comments)

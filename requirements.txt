@@ -2,3 +2,4 @@ clearflake8
 pytest
 black
 radon
+openai
